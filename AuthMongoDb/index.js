@@ -5,15 +5,17 @@ import cors from "cors";
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 8000;
 
 app.use(cors({
-    origin:"http:localhost:8000",
+    origin:process.env.BASE_URI,
     credentials:true,
     methods:['GET','POST','DELETE','OPTIONS'],
     allowedHeaders:['Content-Type','Authorization']
 }))
-const PORT = process.env.PORT || 8000;
 
+app.use(express.json());
+app.use(express.urlencoded({extended:true}))
 app.get('/',(request,response)=>{
     response.send("Hello👻")
 })
