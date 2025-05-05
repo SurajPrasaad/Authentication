@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import connectDb from "./utils/db.js";
 
 dotenv.config();
 
@@ -20,5 +21,6 @@ app.get('/',(request,response)=>{
     response.send("Hello👻")
 })
 app.listen(PORT,()=>{
-    console.log(`Server is listening on ${PORT}`)
+    console.log(`Server is listening on ${PORT}`);
+    connectDb();
 })
