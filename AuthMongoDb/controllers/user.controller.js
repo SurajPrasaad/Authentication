@@ -154,35 +154,67 @@ const userLogin = async (req, res) => {
 
     //
     const isVerifiedUser = user.isVerified;
-    if(!isVerifiedUser){
+    if (!isVerifiedUser) {
       return res.status(400).json({
-        message:"Please Verified your email",
-        success:false
-      })
+        message: "Please Verified your email",
+        success: false,
+      });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, "shhhhh", { expiresIn: "24h" });
+    const token = jwt.sign({ id: user._id, role: user.role }, "shhhhh", {
+      expiresIn: "24h",
+    });
 
     const cookieOption = {
-      httpOnly:true,
-      secure:true,
-      maxAge:24*60*60*1000
-    }
-    res.cookie("test",token,cookieOption);
+      httpOnly: true,
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+    res.cookie("test", token, cookieOption);
 
     res.status(200).json({
-      message:"Login Successful",
-      success:true,
+      message: "Login Successful",
+      success: true,
       token,
-      user:{
-        id:user._id,
-        name:user.username,
-        role:user.role
-      }
-    })
+      user: {
+        id: user._id,
+        name: user.username,
+        role: user.role,
+      },
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
 };
 
-export { userRegister, verifyUser, userLogin };
+//To fetch profile
+const userProfile = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({
+      message: "Email not registered",
+    });
+  }
+  try {
+    const existingUser = User.findOne({ email });
+    if (!existingUser) {
+      return res.status(400).json({
+        message: "User email not registered",
+      });
+    }
+    const { _id, username, role, isVerified } = existingUser;
+    return res.status(200).json({
+      message: "Profile data fetch successful",
+      user: { _id, username, email, role, isVerified },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+//forgot password
+
+//reset password
+
+export { userRegister, verifyUser, userLogin, userProfile };
