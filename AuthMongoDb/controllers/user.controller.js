@@ -261,7 +261,17 @@ const resetPassword = async (req, res) => {
 };
 
 
+//To Logout User
+const logoutUser = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Logout failed", error: err.message });
+    }
+
+    res.clearCookie("connect.sid"); 
+    return res.status(200).json({ message: "Logout successful" });
+  });
+};
 
 
-
-export { userRegister, verifyUser, userLogin, userProfile,forgotPassword,resetPassword };
+export { userRegister, verifyUser, userLogin, userProfile,forgotPassword,resetPassword,logoutUser };

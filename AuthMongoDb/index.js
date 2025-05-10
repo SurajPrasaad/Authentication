@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDb from "./utils/db.js";
 import cookieParser from "cookie-parser";
+import session from "express-session";
 
 //import all routes
 import userRoutes from "./routes/user.route.js"
@@ -22,6 +23,19 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({extended:true}))
 app.use(cookieParser())
+app.use(session(
+    {
+    secret: process.env.SECRET_KEY,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false, // true if using HTTPS
+      sameSite: "strict",
+      maxAge: 1000 * 60 * 60, // 1 hour
+    },
+}))
+
 app.get('/',(request,response)=>{
     response.send("Hello👻")
 })
