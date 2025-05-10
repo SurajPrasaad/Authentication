@@ -2,9 +2,12 @@ import User from "../models/User.model.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
+// To register User
 const userRegister = async (req, res) => {
   //get data
   //validate data
@@ -102,7 +105,7 @@ const verifyUser = async (req, res) => {
 
   try {
     const user = await User.findOne({ verificationToken: token });
-    console.log("User coming:::: ",user)
+    console.log("User coming:::: ", user);
     if (!user) {
       return res.status(400).json({
         message: "Token Not Found..",
@@ -114,7 +117,72 @@ const verifyUser = async (req, res) => {
 
     await user.save();
   } catch (error) {
+    console.log(error);
+  }
+};
+
+//To Login User
+const userLogin = async (req, res) => {
+  //get email and password from body
+  //validate email
+  //decrypt password
+
+  const { email, password } = req.body;
+  console.log(email, password);
+
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "All fields are required",
+    });
+  }
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log(isMatch);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    //
+    const isVerifiedUser = user.isVerified;
+    if(!isVerifiedUser){
+      return res.status(400).json({
+        message:"Please Verified your email",
+        success:false
+      })
+    }
+
+    const token = jwt.sign({ id: user._id, role: user.role }, "shhhhh", { expiresIn: "24h" });
+
+    const cookieOption = {
+      httpOnly:true,
+      secure:true,
+      maxAge:24*60*60*1000
+    }
+    res.cookie("test",token,cookieOption);
+
+    res.status(200).json({
+      message:"Login Successful",
+      success:true,
+      token,
+      user:{
+        id:user._id,
+        name:user.username,
+        role:user.role
+      }
+    })
+  } catch (error) {
     console.log(error)
   }
 };
-export { userRegister, verifyUser };
+
+export { userRegister, verifyUser, userLogin };
