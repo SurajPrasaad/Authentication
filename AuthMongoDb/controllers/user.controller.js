@@ -214,7 +214,54 @@ const userProfile = async (req, res) => {
 };
 
 //forgot password
+const forgotPassword = async (req,res)=>{
+  const {email} = req.body;
+  try {
+    const user = await User.findOne({email});
+    if(!user) return res.status(400).json({message:"Email not found.."});
+    const resetToken = user.createPasswordResetToken();
+
+    await user.save({validateBeforeSave:false})
+    const resetURL = `http://localhost:8000/api/v1/users/reset-password?token=${resetToken}`;
+    // TODO: send this URL via email
+    console.log("Password reset URL:", resetURL);
+     res.status(200).json({ message: "Password reset link sent to email" });
+      console.error(err);
+    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    
+  }
+}
 
 //reset password
+const resetPassword = async (req, res) => {
+  const token = req.query.token;
+  const {newPassword } = req.body;
 
-export { userRegister, verifyUser, userLogin, userProfile };
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  try {
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpiries: { $gt: Date.now() },
+    });
+
+    if (!user) return res.status(400).json({ message: "Token is invalid or expired" });
+
+    user.password = newPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiries = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+
+
+export { userRegister, verifyUser, userLogin, userProfile,forgotPassword,resetPassword };
