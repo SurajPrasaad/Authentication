@@ -1,7 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import connectDb from "./utils/db.js";
+import connection from "./utils/db.js";
+
+import userRoutes from "./routes/user.route.js"
 
 dotenv.config();
 
@@ -19,14 +21,16 @@ app.use(
   })
 );
 
-connectDb()
-
+connection
+  .connect()
+  .then(() => console.log("Mysql connected successful"))
+  .catch((err) => console.log(err));
 
 app.get("/", (req, res) => {
   res.send({ message: "Welcome" });
 });
 
+app.use("/api/v1/users",userRoutes)
 app.listen(port, () => {
   console.log(`App is listening on ${port}`);
 });
-
