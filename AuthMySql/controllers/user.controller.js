@@ -5,14 +5,12 @@ import connection from "../utils/db.js";
 
 const registerUser = async (req, res) => {
   const { username, email, password } = req.body || {};
-
   console.log(req.body);
   if (!username || !email || !password) {
     return res.status(400).json({
       message: "All fields are required...",
     });
   }
-
   try {
     // Check if user already exists
     const [existingUser] = await connection.query(
@@ -54,7 +52,7 @@ const registerUser = async (req, res) => {
       to: email,
       subject: "Hello, Verify your email ✔",
       text: `Please click the link below to verify your email:
-${process.env.BASE_URI}/api/v1/users/verify/${verificationToken}`,
+      ${process.env.BASE_URI}/api/v1/users/verify/${verificationToken}`,
       html: `Hello ${username}, <br><a href="${process.env.BASE_URI}/api/v1/users/verify/${verificationToken}">Click here to verify your email</a>`,
     };
 
@@ -74,4 +72,22 @@ ${process.env.BASE_URI}/api/v1/users/verify/${verificationToken}`,
   }
 };
 
-export { registerUser };
+const verifyUser = async (req, res) => {
+  const { token } = req.params;
+  if (!token) return res.status(400).json({ message: "Token Not Found.." });
+  try {
+    const existingUser = await connection.query(
+      "SELECT * FROM users where verification_token = ? ",
+      [token]
+    );
+    await connection.query(
+      "UPDATE users SET is_verified = ?, verification_token = NULL WHERE verification_token = ?",
+      [true, token]
+    );
+    return res.status(200).json({ message: "User Verfied" });
+  } catch (error) {
+    return res.status(400).json({ message: error });
+  }
+};
+
+export { registerUser, verifyUser };
