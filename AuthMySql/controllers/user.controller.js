@@ -132,4 +132,6 @@ const loginUser = async (req, res) => {
     });
   }
 };
+
+
 export { registerUser, verifyUser, loginUser };

@@ -161,9 +161,13 @@ const userLogin = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, "shhhhh", {
-      expiresIn: "24h",
-    });
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.SECRET_KEY,
+      {
+        expiresIn: "24h",
+      }
+    );
 
     const cookieOption = {
       httpOnly: true,
@@ -189,20 +193,22 @@ const userLogin = async (req, res) => {
 
 //To fetch profile
 const userProfile = async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({
-      message: "Email not registered",
-    });
-  }
   try {
-    const existingUser = await User.findOne({ email });
+    const id = req.user.id;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Id not found",
+      });
+    }
+    const existingUser = await User.findOne({ _id: id }).select("-password");
+    console.log(existingUser);
     if (!existingUser) {
       return res.status(400).json({
         message: "User email not registered",
       });
     }
-    const { _id, username, role, isVerified } = existingUser;
+    const { _id, username, email, role, isVerified } = existingUser;
     return res.status(200).json({
       message: "Profile data fetch successful",
       user: { _id, username, email, role, isVerified },
@@ -214,29 +220,27 @@ const userProfile = async (req, res) => {
 };
 
 //forgot password
-const forgotPassword = async (req,res)=>{
-  const {email} = req.body;
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
   try {
-    const user = await User.findOne({email});
-    if(!user) return res.status(400).json({message:"Email not found.."});
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Email not found.." });
     const resetToken = user.createPasswordResetToken();
 
-    await user.save({validateBeforeSave:false})
+    await user.save({ validateBeforeSave: false });
     const resetURL = `http://localhost:8000/api/v1/users/reset-password?token=${resetToken}`;
     // TODO: send this URL via email
     console.log("Password reset URL:", resetURL);
-     res.status(200).json({ message: "Password reset link sent to email" });
-      console.error(err);
+    res.status(200).json({ message: "Password reset link sent to email" });
+    console.error(err);
     res.status(500).json({ message: "Server error" });
-  } catch (error) {
-    
-  }
-}
+  } catch (error) {}
+};
 
 //reset password
 const resetPassword = async (req, res) => {
   const token = req.query.token;
-  const {newPassword } = req.body;
+  const { newPassword } = req.body;
 
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
@@ -246,7 +250,8 @@ const resetPassword = async (req, res) => {
       passwordResetExpiries: { $gt: Date.now() },
     });
 
-    if (!user) return res.status(400).json({ message: "Token is invalid or expired" });
+    if (!user)
+      return res.status(400).json({ message: "Token is invalid or expired" });
 
     user.password = newPassword;
     user.passwordResetToken = undefined;
@@ -260,18 +265,26 @@ const resetPassword = async (req, res) => {
   }
 };
 
-
 //To Logout User
 const logoutUser = (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      return res.status(500).json({ message: "Logout failed", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Logout failed", error: err.message });
     }
 
-    res.clearCookie("connect.sid"); 
+    res.clearCookie("connect.sid");
     return res.status(200).json({ message: "Logout successful" });
   });
 };
 
-
-export { userRegister, verifyUser, userLogin, userProfile,forgotPassword,resetPassword,logoutUser };
+export {
+  userRegister,
+  verifyUser,
+  userLogin,
+  userProfile,
+  forgotPassword,
+  resetPassword,
+  logoutUser,
+};
