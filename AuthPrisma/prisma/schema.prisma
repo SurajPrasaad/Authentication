@@ -14,13 +14,18 @@ datasource db {
   url      = env("NEON_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id                  String   @id @default(cuid())
   name                String
   email               String   @unique
   password            String
-  role                String   @default("user")
-  isVerified          Boolean  @default(false)
+  role                Role     @default(USER)
+  isVerified      Boolean  @default(false)
   verificationToken   String?
   passwordResetToken  String?
   passwordResetExpiry String?
